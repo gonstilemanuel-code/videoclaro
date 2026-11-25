@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#101827">
+<title>VideoClaro — edição simples no seu navegador</title>
+<style>
+:root{color-scheme:dark;--bg:#0b1220;--panel:#121d30;--panel2:#17243a;--line:#293951;--text:#eef4ff;--muted:#a8b6ca;--accent:#6ee7c2;--accent2:#37c9a2;--danger:#ffb4a8}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#172943 0,#0b1220 55%);color:var(--text);font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;min-height:100vh}
+header{max-width:1100px;margin:auto;padding:28px 22px 10px;display:flex;align-items:center;gap:13px}.logo{width:44px;height:44px;border-radius:14px;background:linear-gradient(135deg,#83f1d2,#2dbb9b);display:grid;place-items:center;color:#09251f;font-weight:900;font-size:21px}.brand{font-size:1.25rem;font-weight:800;letter-spacing:.2px}.tag{color:var(--muted);font-size:.88rem}
+main{max-width:1100px;margin:22px auto 60px;padding:0 22px}.intro{margin:18px 0 25px}.intro h1{font-size:clamp(1.8rem,4vw,2.7rem);line-height:1.12;margin:0 0 10px}.intro p{color:var(--muted);max-width:680px;margin:0}
+.layout{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(270px,.8fr);gap:18px}.panel{background:rgba(18,29,48,.94);border:1px solid var(--line);border-radius:20px;padding:20px;box-shadow:0 16px 45px #0003}.panel h2{font-size:1.05rem;margin:0 0 14px}.drop{border:1.5px dashed #49627e;border-radius:15px;padding:28px 18px;text-align:center;background:#0e1929;cursor:pointer;transition:.2s}.drop:hover,.drop.drag{border-color:var(--accent);background:#12283a}.drop strong{display:block;margin:7px 0 2px}.drop small{color:var(--muted)}input[type=file]{display:none}.btn{border:0;border-radius:12px;padding:11px 16px;font:inherit;font-weight:700;cursor:pointer;background:var(--accent);color:#09251f}.btn:hover{background:#91f5dc}.btn:disabled{opacity:.45;cursor:not-allowed}.btn.secondary{background:#253750;color:var(--text);border:1px solid #3a506d}.btn.secondary:hover{background:#304561}.actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:14px}.preview{margin-top:16px;background:#050a12;border-radius:14px;overflow:hidden;min-height:190px;display:grid;place-items:center;position:relative}.preview canvas{display:block;max-width:100%;max-height:440px;width:auto;height:auto}.empty{color:#7f91a9;padding:40px 10px;text-align:center}.field{margin:15px 0}.field label{display:block;font-weight:650;margin-bottom:6px}.field small,.hint{color:var(--muted);font-size:.86rem}.field select{width:100%;background:#0e1929;color:var(--text);border:1px solid #3a506d;border-radius:10px;padding:10px;font:inherit}.check{display:flex;gap:9px;align-items:flex-start;color:var(--muted);font-size:.9rem}.check input{margin-top:5px;accent-color:var(--accent)}.status{margin-top:14px;padding:12px;border-radius:12px;background:#0e1929;color:var(--muted);font-size:.9rem}.progress{height:8px;background:#26364d;border-radius:99px;overflow:hidden;margin-top:9px}.bar{height:100%;width:0;background:var(--accent);transition:width .15s}.note{border-left:3px solid #e5bd72;padding:10px 12px;background:#2b261b;color:#e9d9b7;border-radius:0 10px 10px 0;font-size:.86rem;margin-top:15px}.privacy{display:flex;gap:8px;align-items:center;color:#9edfcf;font-size:.87rem;margin-top:17px}.footer{color:#7f91a9;font-size:.82rem;margin:20px 2px}
+@media(max-width:780px){.layout{grid-template-columns:1fr}header{padding-top:20px}.panel{padding:16px}}
+</style>
+</head>
+<body>
+<header><div class="logo">V</div><div><div class="brand">VideoClaro</div><div class="tag">Edição simples, direto no navegador</div></div></header>
+<main>
+<section class="intro"><h1>Deixe seu vídeo mais limpo.</h1><p>Selecione um vídeo, escolha uma área para desfocar e exporte o resultado. Seus arquivos são processados localmente no navegador.</p></section>
+<div class="layout">
+<section class="panel">
+<h2>1. Escolha seu vídeo</h2>
+<label class="drop" id="drop" for="file"><span style="font-size:2rem">▣</span><strong>Toque para selecionar ou arraste um vídeo aqui</strong><small>MP4, WebM e outros formatos compatíveis com seu navegador · até 1 hora</small></label>
+<input id="file" type="file" accept="video/*">
+<div class="actions"><button class="btn secondary" id="clear" disabled>Remover vídeo</button></div>
+<div class="preview" id="preview"><div class="empty" id="empty">A prévia do vídeo aparecerá aqui.</div><canvas id="canvas" hidden></canvas></div>
+<div class="hint" id="videoInfo" style="margin-top:9px">Nenhum vídeo selecionado.</div>
+<div class="actions"><button class="btn" id="process" disabled>Processar vídeo</button><button class="btn secondary" id="download" disabled>Baixar resultado</button></div>
+<div class="status" id="status" aria-live="polite">Aguardando um vídeo.</div>
+<div class="progress"><div class="bar" id="bar"></div></div>
+</section>
+<aside class="panel">
+<h2>2. Ajuste o tratamento</h2>
+<div class="field"><label for="mode">Tratamento da área marcada</label><select id="mode"><option value="blur">Desfocar área</option><option value="crop">Cobrir com faixa discreta</option><option value="none">Não aplicar tratamento</option></select></div>
+<div class="field"><label>Marcar uma área no vídeo</label><div class="hint">Depois de carregar o vídeo, arraste sobre a prévia para selecionar a região que deseja tratar. Você pode ajustar a seleção novamente a qualquer momento.</div></div>
+<div class="actions"><button class="btn secondary" id="resetArea" disabled>Limpar seleção</button></div>
+<div class="field"><label for="quality">Qualidade do arquivo</label><select id="quality"><option value="5">Padrão (menor arquivo)</option><option value="8" selected>Alta</option><option value="12">Muito alta (arquivo maior)</option></select></div>
+<label class="check"><input type="checkbox" id="includeAudio" checked><span>Manter o áudio original, se o navegador permitir.</span></label>
+<div class="note"><strong>Importante:</strong> o tratamento desfoca ou cobre a área selecionada; não reconstrói o que está por trás dela. Legendas gravadas na imagem não podem ser removidas automaticamente.</div>
+<div class="privacy">✓ O vídeo não é enviado para um servidor.</div>
+</aside>
+</div>
+<p class="footer">VideoClaro · A compatibilidade depende do navegador e do dispositivo. A exportação é em WebM quando disponível.</p>
+</main>
+<video id="source" playsinline muted hidden></video>
+<script>
+(() => {
+ const $ = id => document.getElementById(id);
+ const file=$('file'), drop=$('drop'), video=$('source'), canvas=$('canvas'), ctx=canvas.getContext('2d');
+ const processBtn=$('process'), downloadBtn=$('download'), status=$('status'), bar=$('bar');
+ let objectUrl=null, selected=null, drawing=false, start=null, recorder=null, chunks=[], resultUrl=null, busy=false;
+ let audioContext=null;
+ const say=t=>status.textContent=t;
+ const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
+ function fmt(s){if(!Number.isFinite(s))return 'duração indisponível';const m=Math.floor(s/60),r=Math.floor(s%60);return `${m} min ${r} s`;}
+ function clearResult(){if(resultUrl){URL.revokeObjectURL(resultUrl);resultUrl=null;}downloadBtn.disabled=true;downloadBtn.onclick=null;}
+ function reset(){
+  if(busy)return;
+  video.pause();video.removeAttribute('src');video.load();
+  if(objectUrl)URL.revokeObjectURL(objectUrl);objectUrl=null;selected=null;clearResult();
+  canvas.hidden=true;$('empty').hidden=false;$('videoInfo').textContent='Nenhum vídeo selecionado.';
+  processBtn.disabled=true;$('clear').disabled=true;$('resetArea').disabled=true;bar.style.width='0%';say('Aguardando um vídeo.');file.value='';
+ }
+ function load(f){
+  if(!f)return;
+  if(!f.type.startsWith('video/')){say('Selecione um arquivo de vídeo.');return;}
+  if(objectUrl)URL.revokeObjectURL(objectUrl);
+  clearResult();objectUrl=URL.createObjectURL(f);video.src=objectUrl;
+  video.onloadedmetadata=()=>{
+   if(video.duration>3600){say('Este vídeo passa do limite de 1 hora.');reset();return;}
+   const w=video.videoWidth,h=video.videoHeight;
+   const scale=Math.min(1,1280/w,720/h);canvas.width=Math.max(1,Math.round(w*scale));canvas.height=Math.max(1,Math.round(h*scale));
+   video.currentTime=0;video.pause();drawFrame();canvas.hidden=false;$('empty').hidden=true;
+   $('videoInfo').textContent=`${f.name} · ${w} × ${h} · ${fmt(video.duration)}`;
+   processBtn.disabled=false;$('clear').disabled=false;$('resetArea').disabled=false;say('Vídeo carregado. Arraste na prévia para marcar uma área.');
+  };
+  video.onerror=()=>say('Não foi possível abrir este formato neste navegador. Tente outro vídeo.');
+ }
+ file.addEventListener('change',e=>load(e.target.files[0]));
+ $('clear').onclick=reset;
+ drop.addEventListener('dragover',e=>{e.preventDefault();drop.classList.add('drag')});
+ drop.addEventListener('dragleave',()=>drop.classList.remove('drag'));
+ drop.addEventListener('drop',e=>{e.preventDefault();drop.classList.remove('drag');load(e.dataTransfer.files[0])});
+ function drawFrame(){
+  if(!video.videoWidth)return;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.drawImage(video,0,0,canvas.width,canvas.height);
+  if(selected && $('mode').value!=='none') applyTreatment(ctx,selected);
+  if(selected){ctx.save();ctx.strokeStyle='#6ee7c2';ctx.lineWidth=Math.max(2,canvas.width/400);ctx.setLineDash([7,5]);ctx.strokeRect(selected.x,selected.y,selected.w,selected.h);ctx.restore();}
+ }
+ function applyTreatment(target,r){
+  const x=clamp(r.x,0,canvas.width),y=clamp(r.y,0,canvas.height),w=clamp(r.w,0,canvas.width-x),h=clamp(r.h,0,canvas.height-y);
+  if(w<2||h<2)return;
+  if($('mode').value==='crop'){target.save();target.fillStyle='#101827';target.fillRect(x,y,w,h);target.restore();}
+  else if($('mode').value==='blur'){
+   const pad=10, sx=Math.max(0,x-pad),sy=Math.max(0,y-pad),sw=Math.min(canvas.width-sx,w+pad*2),sh=Math.min(canvas.height-sy,h+pad*2);
+   const temp=document.createElement('canvas');temp.width=Math.max(1,Math.round(sw));temp.height=Math.max(1,Math.round(sh));
+   const t=temp.getContext('2d');t.filter='blur(12px)';t.drawImage(canvas,sx,sy,sw,sh,0,0,temp.width,temp.height);
+   target.save();target.beginPath();target.rect(x,y,w,h);target.clip();target.drawImage(temp,sx,sy,sw,sh);target.restore();
+  }
+ }
+ function coords(e){const r=canvas.getBoundingClientRect();return {x:(e.clientX-r.left)*canvas.width/r.width,y:(e.clientY-r.top)*canvas.height/r.height};}
+ canvas.addEventListener('pointerdown',e=>{if(busy||!video.videoWidth)return;drawing=true;start=coords(e);selected={x:start.x,y:start.y,w:0,h:0};canvas.setPointerCapture(e.pointerId);drawFrame();});
+ canvas.addEventListener('pointermove',e=>{if(!drawing)return;const p=coords(e);selected={x:Math.min(start.x,p.x),y:Math.min(start.y,p.y),w:Math.abs(p.x-start.x),h:Math.abs(p.y-start.y)};drawFrame();});
+ canvas.addEventListener('pointerup',()=>{if(!drawing)return;drawing=false;if(selected.w<8||selected.h<8)selected=null;drawFrame();clearResult();});
+ $('resetArea').onclick=()=>{selected=null;drawFrame();clearResult();say('Seleção removida.');};
+ $('mode').onchange=()=>{drawFrame();clearResult();};
+ $('quality').onchange=clearResult;
+ $('includeAudio').onchange=clearResult;
+ video.addEventListener('seeked',drawFrame);
+ video.addEventListener('timeupdate',()=>{if(!busy)drawFrame();});
+ async function processVideo(){
+  if(busy||!video.src)return;
+  if(!canvas.captureStream||!window.MediaRecorder){say('Seu navegador não oferece suporte à exportação deste vídeo. Tente uma versão atualizada do Chrome ou Edge.');return;}
+  clearResult();busy=true;processBtn.disabled=true;$('clear').disabled=true;$('resetArea').disabled=true;
+  chunks=[];bar.style.width='0%';say('Preparando a gravação…');
+  try{
+   const stream=canvas.captureStream(30);
+   if($('includeAudio').checked && video.captureStream){
+    const sourceStream=video.captureStream();
+    sourceStream.getAudioTracks().forEach(t=>stream.addTrack(t));
+   }
+   const mime=['video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm'].find(t=>MediaRecorder.isTypeSupported(t));
+   if(!mime)throw new Error('Este navegador não oferece um formato de exportação compatível.');
+   recorder=new MediaRecorder(stream,{mimeType:mime,videoBitsPerSecond:Number($('quality').value)*1000000});
+   recorder.ondataavailable=e=>{if(e.data&&e.data.size)chunks.push(e.data);};
+   const finished=new Promise((resolve,reject)=>{recorder.onstop=resolve;recorder.onerror=()=>reject(new Error('Falha durante a gravação.'));});
+   recorder.start(1000);
+   video.pause();video.currentTime=0;await new Promise((resolve,reject)=>{const done=()=>{video.removeEventListener('seeked',done);resolve();};video.addEventListener('seeked',done,{once:true});video.addEventListener('error',reject,{once:true});});
+   drawFrame();
+   await video.play();
+   say('Processando em tempo real… mantenha esta aba aberta.');
+   const tick=()=>{
+    if(!busy)return;
+    drawFrame();
+    const pct=video.duration?Math.min(99,video.currentTime/video.duration*100):0;
+    bar.style.width=pct+'%';
+    if(video.ended){video.pause();if(recorder&&recorder.state!=='inactive')recorder.stop();return;}
+    requestAnimationFrame(tick);
+   };
+   requestAnimationFrame(tick);
+   await finished;
+   stream.getTracks().forEach(t=>t.stop());
+   if(!chunks.length)throw new Error('O navegador não gerou um arquivo.');
+   const blob=new Blob(chunks,{type:mime});resultUrl=URL.createObjectURL(blob);
+   downloadBtn.disabled=false;downloadBtn.onclick=()=>{const a=document.createElement('a');a.href=resultUrl;a.download='videoclaro-resultado.webm';a.click();};
+   bar.style.width='100%';say(`Concluído! Arquivo pronto (${(blob.size/1024/1024).toFixed(1)} MB). Clique em “Baixar resultado”.`);
+  }catch(err){if(recorder&&recorder.state!=='inactive')recorder.stop();say(err.message||'Não foi possível processar este vídeo.');}
+  finally{busy=false;processBtn.disabled=false;$('clear').disabled=false;$('resetArea').disabled=false;video.pause();drawFrame();}
+ }
+ processBtn.onclick=processVideo;
+})();
+</script>
+</body>
+</html>
